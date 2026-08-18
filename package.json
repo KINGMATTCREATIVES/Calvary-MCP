@@ -17,7 +17,8 @@
     "demo-text": "node scripts/create-demo.js 2",
     "demo-mandala": "node scripts/create-demo.js 3",
     "demo-ball": "node scripts/dispatch-bouncing-ball.js",
-    "demo-flying-ball": "node scripts/dispatch-flying-ball.js"
+    "demo-flying-ball": "node scripts/dispatch-flying-ball.js",
+    "demo-typewriter": "node scripts/dispatch-typewriter-text.js"
   },
   "keywords": [
     "mcp",
