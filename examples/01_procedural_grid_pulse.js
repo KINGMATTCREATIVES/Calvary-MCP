@@ -2,42 +2,50 @@
 // Creates a 10x10 pulsating procedural grid in Cavalry
 
 (function() {
-    console.log("Generating Procedural Noise Grid...");
+    console.log("Generating Procedural Noise Grid in Cavalry...");
 
-    // 1. Create Base Shape (Rounded Rectangle)
-    var rectId = api.create("basicShape", "Matrix Node");
-    api.set(rectId, {
-        "shapeType": 0, // Rectangle
-        "width": 40,
-        "height": 40,
-        "cornerRadius": 12,
-        "color": "#00E5FF" // Neon Cyan
-    });
+    // 1. Create Base Shape (Rounded Rectangle via api.primitive)
+    var rectId = api.primitive("rectangle", "Matrix_Node");
+    if (rectId) {
+        api.set(rectId, {
+            "scale.x": 0.2, // 40px (default 200px * 0.2)
+            "scale.y": 0.2,
+            "cornerRadius": 12,
+            "material.materialColor": "#00E5FF" // Neon Cyan
+        });
+    }
 
     // 2. Create Duplicator
-    var dupId = api.create("duplicator", "Grid Duplicator");
-    api.connect(rectId, "id", dupId, "generator");
+    var dupId = api.create("duplicator", "Grid_Duplicator");
+    if (dupId && rectId) {
+        api.connect(rectId, "id", dupId, "shapes");
+    }
 
     // 3. Create Grid Distribution
-    var gridId = api.create("gridDistribution", "Grid Layout");
-    api.set(gridId, {
-        "count.x": 10,
-        "count.y": 10,
-        "size.x": 700,
-        "size.y": 700
-    });
-    api.connect(gridId, "id", dupId, "distribution");
+    var gridId = api.create("gridDistribution", "Grid_Layout");
+    if (gridId && dupId) {
+        api.set(gridId, {
+            "count.x": 10,
+            "count.y": 10,
+            "size.x": 800,
+            "size.y": 800
+        });
+        api.connect(gridId, "id", dupId, "distribution");
+    }
 
-    // 4. Create Noise Generator for Dynamic Scale & Motion
-    var noiseId = api.create("noise", "Pulse Noise");
-    api.set(noiseId, {
-        "frequency": 0.4,
-        "speed": 2.0,
-        "minimum": 0.2,
-        "maximum": 1.6
-    });
-    api.connect(noiseId, "id", dupId, "shapeScale");
+    // 4. Create Noise Value modifier
+    var noiseId = api.create("noise", "Noise_Pulse");
+    if (noiseId && dupId) {
+        api.set(noiseId, {
+            "frequency": 0.8,
+            "amplitude": 1.5,
+            "minimum": 0.2,
+            "maximum": 1.2
+        });
+        api.connect(noiseId, "id", dupId, "shapeScale.x");
+        api.connect(noiseId, "id", dupId, "shapeScale.y");
+    }
 
-    console.log("Procedural Noise Grid generated successfully!");
-    return "Grid created with " + dupId;
+    console.log("✓ Procedural Noise Grid created successfully.");
+    return "Grid pulse created successfully!";
 })();

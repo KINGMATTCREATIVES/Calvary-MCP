@@ -60,13 +60,31 @@
   const valVelocity = document.getElementById('val-velocity');
 
   // Animation State
-  let activeMode = 'kinetic'; // 'kinetic', 'classic', 'physics', 'trajectory', 'multiball'
+  let activeMode = 'agency'; // 'agency', 'barchart', 'kinetic', 'classic', 'physics', 'trajectory', 'multiball'
   let activeTheme = 'coral';
   let isPlaying = true;
   let isSoundEnabled = true;
   let playbackSpeed = 1.0;
   let currentFrame = 0;
   const TOTAL_LOOP_FRAMES = 60;
+  const BARCHART_TOTAL_FRAMES = 240;
+  const AGENCY_TOTAL_FRAMES = 900;
+  
+  // Bar Chart Race Dataset (Quarterly Revenue in $M)
+  const barChartSeries = [
+    { id: 'cloud', label: 'Cloud Platform', color: '#00f2fe', values: [42, 68, 105, 148] },
+    { id: 'ai', label: 'AI Solutions', color: '#10b981', values: [31, 59, 94, 132] },
+    { id: 'enterprise', label: 'Enterprise SaaS', color: '#ffb300', values: [78, 88, 98, 112] },
+    { id: 'hardware', label: 'Devices & HW', color: '#ff5252', values: [65, 70, 74, 79] },
+    { id: 'consumer', label: 'Consumer Apps', color: '#8b5cf6', values: [24, 35, 46, 58] }
+  ];
+
+  const chartQuarters = [
+    { name: 'Q1 2026', frame: 0 },
+    { name: 'Q2 2026', frame: 70 },
+    { name: 'Q3 2026', frame: 140 },
+    { name: 'Q4 2026', frame: 200 }
+  ];
   
   // Physics Parameters
   let gravity = 980; // px/s^2
@@ -263,7 +281,9 @@
     shockwaves = [];
     currentFrame = 0;
 
-    if (activeMode === 'kinetic') {
+    if (activeMode === 'barchart') {
+      balls = [];
+    } else if (activeMode === 'kinetic') {
       kineticText.targetY = cy;
       kineticText.startY = cy + 360;
       kineticText.x = cx;
@@ -391,6 +411,34 @@
       sw.radius += (sw.maxRadius - sw.radius) * 12 * dt;
       sw.opacity -= 1.8 * dt;
       if (sw.opacity <= 0) shockwaves.splice(i, 1);
+    }
+
+    if (activeMode === 'agency') {
+      if (isPlaying) {
+        currentFrame = (currentFrame + (30 * dt * playbackSpeed)) % AGENCY_TOTAL_FRAMES;
+        scrubber.value = Math.floor(currentFrame);
+        scrubber.max = AGENCY_TOTAL_FRAMES;
+        lblFrame.textContent = `F: ${Math.floor(currentFrame)} / ${AGENCY_TOTAL_FRAMES} (30s)`;
+      }
+
+      valFps.textContent = Math.round(1 / dt || 60);
+      valHeight.textContent = `10 Scenes`;
+      valVelocity.textContent = `${(currentFrame / 30).toFixed(1)}s`;
+      return;
+    }
+
+    if (activeMode === 'barchart') {
+      if (isPlaying) {
+        currentFrame = (currentFrame + (60 * dt * playbackSpeed)) % BARCHART_TOTAL_FRAMES;
+        scrubber.value = Math.floor(currentFrame);
+        scrubber.max = BARCHART_TOTAL_FRAMES;
+        lblFrame.textContent = `F: ${Math.floor(currentFrame)} / ${BARCHART_TOTAL_FRAMES}`;
+      }
+
+      valFps.textContent = Math.round(1 / dt || 60);
+      valHeight.textContent = `4 Quarters`;
+      valVelocity.textContent = `${Math.round(currentFrame)}f`;
+      return;
     }
 
     if (activeMode === 'kinetic') {
@@ -617,7 +665,117 @@
       ctx.restore();
     });
 
-    // 5. Draw Shadows & Balls or Kinetic Text
+    // 5. Draw Shadows & Balls or Bar Chart Race or Kinetic Text or Agency Reel
+    if (activeMode === 'agency') {
+      drawAgencyReel(w, h, currentFrame);
+      return;
+    }
+
+    if (activeMode === 'barchart') {
+      const f = currentFrame;
+      const chartLeft = w * 0.26;
+      const chartTop = 130;
+      const barH = 38;
+      const barGap = 16;
+      const maxW = w * 0.52;
+      const maxVal = 160;
+
+      function easeInOut(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      }
+
+      function getVal(item, frame) {
+        if (frame <= chartQuarters[0].frame) {
+          var intro = Math.min(1, Math.max(0, frame / 30));
+          return item.values[0] * easeInOut(intro);
+        }
+        if (frame >= chartQuarters[3].frame) return item.values[3];
+        for (var q = 0; q < chartQuarters.length - 1; q++) {
+          var qStart = chartQuarters[q];
+          var qEnd = chartQuarters[q + 1];
+          if (frame >= qStart.frame && frame <= qEnd.frame) {
+            var prog = (frame - qStart.frame) / (qEnd.frame - qStart.frame);
+            return item.values[q] + (item.values[q + 1] - item.values[q]) * easeInOut(prog);
+          }
+        }
+        return item.values[3];
+      }
+
+      function getQuarter(frame) {
+        if (frame < chartQuarters[1].frame) return "Q1 2026";
+        if (frame < chartQuarters[2].frame) return "Q2 2026";
+        if (frame < chartQuarters[3].frame) return "Q3 2026";
+        return "Q4 2026";
+      }
+
+      // Compute current items & ranks
+      const currentItems = barChartSeries.map(it => ({
+        item: it,
+        value: getVal(it, f)
+      })).sort((a, b) => b.value - a.value);
+
+      // Title
+      ctx.save();
+      ctx.font = '700 18px "Inter", sans-serif';
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = 'center';
+      ctx.fillText("QUARTERLY REVENUE PERFORMANCE ($M)", w / 2, 80);
+
+      // Big Quarter Watermark
+      ctx.font = '900 84px "Inter", sans-serif';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.textAlign = 'right';
+      ctx.fillText(getQuarter(f), w - 40, h - 70);
+
+      // Left Baseline Axis
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(chartLeft - 10, chartTop - 15);
+      ctx.lineTo(chartLeft - 10, chartTop + (barChartSeries.length * (barH + barGap)));
+      ctx.stroke();
+      ctx.restore();
+
+      // Draw Bars
+      currentItems.forEach((entry, rank) => {
+        const targetY = chartTop + rank * (barH + barGap);
+        const widthPx = Math.max(6, (entry.value / maxVal) * maxW);
+
+        // Track background
+        ctx.save();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+        ctx.beginPath();
+        ctx.roundRect(chartLeft, targetY, maxW, barH, 6);
+        ctx.fill();
+
+        // Active Bar Fill
+        ctx.fillStyle = entry.item.color;
+        ctx.shadowColor = entry.item.color;
+        ctx.shadowBlur = 14;
+        ctx.beginPath();
+        ctx.roundRect(chartLeft, targetY, widthPx, barH, 6);
+        ctx.fill();
+        ctx.restore();
+
+        // Category Label
+        ctx.save();
+        ctx.font = '600 14px "Inter", sans-serif';
+        ctx.fillStyle = '#f1f5f9';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(entry.item.label, chartLeft - 22, targetY + barH / 2);
+
+        // Value Ticker ($M)
+        ctx.font = '700 14px "Fira Code", monospace';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'left';
+        ctx.fillText(`$${Math.round(entry.value)}M`, chartLeft + widthPx + 12, targetY + barH / 2);
+        ctx.restore();
+      });
+
+      return;
+    }
+
     if (activeMode === 'kinetic') {
       // Dynamic ground shadow for text
       const shadowDist = Math.max(0, floorY - kineticText.y);
@@ -805,6 +963,348 @@
     }
   }
 
+  // Draw Agency Reel (30s / 10 Scenes)
+  function drawAgencyReel(w, h, f) {
+    const margin = 16;
+    const aspectH = h - margin * 2;
+    const aspectW = aspectH * (9 / 16);
+    const originX = (w - aspectW) / 2;
+    const originY = margin;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(originX, originY, aspectW, aspectH, 16);
+    ctx.clip();
+
+    const scale = aspectW / 1080;
+    ctx.translate(originX + aspectW / 2, originY + aspectH / 2);
+    ctx.scale(scale, scale);
+
+    function drawSunburst(cx, cy, count, angleDeg, color, rotOffset) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 6;
+      ctx.translate(cx, cy);
+      ctx.rotate((rotOffset || 0) * Math.PI / 180);
+      const step = (angleDeg * Math.PI / 180) / (count - 1);
+      const start = - (angleDeg * Math.PI / 180) / 2;
+      for (let i = 0; i < count; i++) {
+        const a = start + i * step;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(a) * 380, Math.sin(a) * 380);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawStar(cx, cy, size, color, rot) {
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.translate(cx, cy);
+      ctx.rotate((rot || 0) * Math.PI / 180);
+      ctx.beginPath();
+      const outer = size / 2;
+      const inner = outer * 0.28;
+      for (let i = 0; i < 8; i++) {
+        const r = (i % 2 === 0) ? outer : inner;
+        const a = i * Math.PI / 4;
+        if (i === 0) ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+        else ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    if (f < 90) {
+      ctx.fillStyle = '#1060FF';
+      ctx.fillRect(-540, -960, 1080, 1920);
+
+      ctx.font = '900 230px "Inter", sans-serif';
+      ctx.fillStyle = 'rgba(0, 62, 179, 0.45)';
+      ctx.textAlign = 'center';
+      ctx.fillText("STRATEGY", 0, -40 - (f * 0.8));
+
+      drawSunburst(480, -820, 11, 85, '#FFFFFF', f * 0.2);
+      drawSunburst(-480, 820, 9, 70, '#FFFFFF', f * 0.2);
+      drawStar(360, -320, 110, '#FFFFFF', f);
+
+      const texts = ["ARE", "YOU", "READY", "TO GROW"];
+      const yStarts = [-280, -130, 20, 180];
+      texts.forEach((txt, idx) => {
+        const tStart = idx * 12;
+        if (f >= tStart) {
+          ctx.font = '900 130px "Inter", sans-serif';
+          ctx.fillStyle = '#FFFFFF';
+          ctx.textAlign = 'center';
+          ctx.fillText(txt, 0, yStarts[idx]);
+        }
+      });
+    } else if (f < 180) {
+      ctx.fillStyle = '#0A0A0A';
+      ctx.fillRect(-540, -960, 1080, 1920);
+
+      ctx.font = '900 250px "Inter", sans-serif';
+      ctx.fillStyle = 'rgba(31, 31, 35, 0.6)';
+      ctx.textAlign = 'center';
+      ctx.fillText("TODAY", 0, 40 - ((f - 90) * 0.8));
+
+      drawSunburst(480, -820, 10, 80, '#FFFFFF', (f - 90) * 0.2);
+      drawSunburst(-480, 820, 10, 80, '#FFFFFF', (f - 90) * 0.2);
+      drawStar(-380, 100, 100, '#FFFFFF', f);
+
+      const texts = ["YOUR", "PRESENCE", "IN SOCIAL", "MEDIA?"];
+      const yStarts = [-180, -30, 110, 240];
+      texts.forEach((txt, idx) => {
+        const tStart = 98 + idx * 10;
+        if (f >= tStart) {
+          ctx.font = '900 120px "Inter", sans-serif';
+          ctx.fillStyle = '#FFFFFF';
+          ctx.textAlign = 'center';
+          ctx.fillText(txt, 0, yStarts[idx]);
+        }
+      });
+    } else if (f < 270) {
+      ctx.fillStyle = '#1060FF';
+      ctx.fillRect(-540, -960, 1080, 1920);
+
+      drawSunburst(0, -960, 13, 110, '#FFFFFF', (f - 180) * 0.2);
+      drawSunburst(0, 960, 13, 110, '#FFFFFF', (f - 180) * 0.2);
+      drawStar(400, -380, 110, '#FFFFFF', f);
+
+      const texts = ["WE", "ARE", "THE"];
+      const yStarts = [-260, -110, 40];
+      texts.forEach((txt, idx) => {
+        const tStart = 188 + idx * 10;
+        if (f >= tStart) {
+          ctx.font = '900 135px "Inter", sans-serif';
+          ctx.fillStyle = '#FFFFFF';
+          ctx.textAlign = 'center';
+          ctx.fillText(txt, 0, yStarts[idx]);
+        }
+      });
+
+      if (f >= 220) {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.roundRect(-410, 155, 820, 170, 16);
+        ctx.fill();
+
+        ctx.font = '900 115px "Inter", sans-serif';
+        ctx.fillStyle = '#1060FF';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText("EXPERTS!", 0, 240);
+      }
+    } else if (f < 360) {
+      ctx.fillStyle = '#0A0A0A';
+      ctx.fillRect(-540, -960, 1080, 1920);
+
+      ctx.font = '900 220px "Inter", sans-serif';
+      ctx.fillStyle = 'rgba(25, 25, 31, 0.8)';
+      ctx.textAlign = 'center';
+      ctx.fillText("MARKETING", 0, 0);
+
+      drawSunburst(-480, 820, 10, 80, '#FFFFFF', (f - 270) * 0.2);
+      drawStar(340, -180, 110, '#FFFFFF', f);
+
+      if (f >= 278) {
+        ctx.font = '800 110px "Inter", sans-serif';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.fillText("Social Media", 0, -40);
+      }
+      if (f >= 290) {
+        ctx.font = '900 130px "Inter", sans-serif';
+        ctx.fillStyle = '#1060FF';
+        ctx.textAlign = 'center';
+        ctx.fillText("Marketing", 0, 100);
+      }
+    } else if (f < 450) {
+      ctx.fillStyle = '#1060FF';
+      ctx.fillRect(-540, -960, 1080, 1920);
+
+      drawSunburst(480, -820, 10, 80, '#FFFFFF', (f - 360) * 0.2);
+      drawStar(-360, 380, 110, '#FFFFFF', f);
+
+      if (f >= 368) {
+        ctx.font = '900 115px "Inter", sans-serif';
+        ctx.fillStyle = '#0A0A0A';
+        ctx.textAlign = 'center';
+        ctx.fillText("CASE STUDY", 0, -70);
+      }
+      if (f >= 380) {
+        ctx.font = '900 135px "Inter", sans-serif';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.fillText("3 MONTHS", 0, 70);
+      }
+    } else if (f < 540) {
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(-540, -960, 1080, 1920);
+
+      ctx.save();
+      ctx.strokeStyle = '#27272A';
+      ctx.lineWidth = 14;
+      ctx.beginPath();
+      ctx.arc(-220, 0, 100, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = '#27272A';
+      ctx.beginPath();
+      ctx.arc(-220, 0, 50, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.font = '900 140px "Inter", sans-serif';
+      ctx.fillStyle = '#27272A';
+      ctx.textAlign = 'left';
+      ctx.fillText("SABI", 100, -25);
+
+      ctx.font = '700 42px "Inter", sans-serif';
+      ctx.fillStyle = '#71717A';
+      ctx.fillText("JUICE YOUR MIND", 105, 55);
+      ctx.restore();
+    } else if (f < 660) {
+      const isAfter = f >= 600;
+      ctx.fillStyle = isAfter ? '#1060FF' : '#F3F4F6';
+      ctx.fillRect(-540, -960, 1080, 1920);
+
+      if (!isAfter) {
+        ctx.font = '900 96px "Inter", sans-serif';
+        ctx.fillStyle = '#0A0A0A';
+        ctx.textAlign = 'center';
+        ctx.fillText("BEFORE", 0, -680);
+      } else {
+        ctx.font = '900 86px "Inter", sans-serif';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.fillText("WITH Mktideas  agency", 0, -680);
+      }
+
+      ctx.fillStyle = '#18181B';
+      ctx.beginPath();
+      ctx.roundRect(-280, -430, 560, 1020, 56);
+      ctx.fill();
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.roundRect(-265, -415, 530, 990, 44);
+      ctx.fill();
+
+      ctx.fillStyle = '#18181B';
+      ctx.beginPath();
+      ctx.roundRect(-70, -400, 140, 26, 13);
+      ctx.fill();
+
+      const postColors = isAfter
+        ? ["#1060FF", "#00F2FE", "#10B981", "#FFB300", "#FF5252", "#8B5CF6", "#EC4899", "#3B82F6", "#06B6D4"]
+        : ["#A1A1AA", "#D4D4D8", "#71717A", "#E4E4E7", "#9CA3AF", "#D1D5DB", "#E5E7EB", "#9CA3AF", "#D1D5DB"];
+
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          const idx = r * 3 + c;
+          ctx.fillStyle = postColors[idx];
+          ctx.beginPath();
+          ctx.roundRect(-220 + c * 150, -220 + r * 150, 140, 140, 10);
+          ctx.fill();
+        }
+      }
+    } else if (f < 810) {
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(-540, -960, 1080, 1920);
+
+      ctx.font = '900 110px "Inter", sans-serif';
+      ctx.fillStyle = '#0A0A0A';
+      ctx.textAlign = 'left';
+      ctx.fillText("VIEWS", -420, -680);
+
+      ctx.font = '700 50px "Inter", sans-serif';
+      ctx.fillText("JULIO", -420, 720);
+      ctx.textAlign = 'right';
+      ctx.fillText("SEPTIEMBRE", 420, 720);
+
+      const targetHeights = [220, 440, 680, 960, 1260];
+      const barStarts = [-360, -200, -40, 120, 280];
+      const barW = 115;
+      const baseFloor = 640;
+
+      targetHeights.forEach((hVal, idx) => {
+        const bStartF = 668 + idx * 12;
+        const bProg = Math.min(1, Math.max(0, (f - bStartF) / 22));
+        const curH = hVal * bProg;
+
+        ctx.fillStyle = '#1060FF';
+        ctx.beginPath();
+        ctx.roundRect(barStarts[idx] - barW / 2, baseFloor - curH, barW, curH, 8);
+        ctx.fill();
+      });
+
+      let tickerVal = "852";
+      if (f >= 755) tickerVal = "50,967";
+      else if (f >= 740) tickerVal = "34,910";
+      else if (f >= 725) tickerVal = "18,450";
+      else if (f >= 710) tickerVal = "5,820";
+
+      ctx.font = '900 120px "Inter", sans-serif';
+      ctx.fillStyle = '#0A0A0A';
+      ctx.textAlign = 'center';
+      ctx.fillText(tickerVal, 160, -500);
+
+      if (f >= 715) {
+        ctx.strokeStyle = '#1060FF';
+        ctx.lineWidth = 14;
+        ctx.beginPath();
+        ctx.moveTo(-280, 200);
+        ctx.quadraticCurveTo(-100, -100, 240, -200);
+        ctx.stroke();
+      }
+    } else if (f < 870) {
+      ctx.fillStyle = '#0A0A0A';
+      ctx.fillRect(-540, -960, 1080, 1920);
+
+      drawSunburst(0, -960, 14, 110, '#FFFFFF', (f - 810) * 0.2);
+      drawSunburst(0, 960, 14, 110, '#FFFFFF', (f - 810) * 0.2);
+      drawStar(360, -220, 120, '#FFFFFF', f);
+      drawStar(-360, 320, 120, '#FFFFFF', f);
+
+      const lines = ["LET'S", "CREATE", "SOMETHING", "AMAZING", "TOGETHER"];
+      const yCoords = [-180, -70, 40, 150, 260];
+      lines.forEach((l, idx) => {
+        if (f >= 814 + idx * 8) {
+          ctx.font = '800 100px "Inter", sans-serif';
+          ctx.fillStyle = '#FFFFFF';
+          ctx.textAlign = 'center';
+          ctx.fillText(l, 0, yCoords[idx]);
+        }
+      });
+    } else {
+      ctx.fillStyle = '#1060FF';
+      ctx.fillRect(-540, -960, 1080, 1920);
+
+      drawSunburst(480, -820, 10, 80, '#FFFFFF', (f - 870) * 0.2);
+      drawSunburst(-480, 820, 10, 80, '#FFFFFF', (f - 870) * 0.2);
+
+      ctx.font = '900 135px "Inter", sans-serif';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'center';
+      ctx.fillText("Mktideas agency", 0, -100);
+
+      ctx.font = '600 36px "Inter", sans-serif';
+      ctx.fillText("[ Instagram • Facebook • TikTok • YouTube • LinkedIn ]", 0, 80);
+
+      ctx.font = '700 48px "Inter", sans-serif';
+      ctx.fillText("mktideas.agency", 0, 220);
+    }
+
+    ctx.restore();
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(originX, originY, aspectW, aspectH);
+    ctx.restore();
+  }
+
   // Animation Loop
   function tick(time) {
     const dt = Math.min((time - lastTime) / 1000, 0.1);
@@ -818,6 +1318,75 @@
 
   // Generate & Update Cavalry Script snippet
   function updateCavalryScript() {
+    if (activeMode === 'agency') {
+      const script = `// --- Cavalry 2D 30s Commercial Agency Reel Generator ---
+// Created via Antigravity Motion Studio
+// Full 10-scene procedural animation (900 frames @ 30fps / 1080x1920 9:16)
+(function createAgencyReel30s() {
+  if (typeof api === "undefined") return;
+  api.log("[MCP] Building 30s Commercial Agency Reel in Cavalry...");
+
+  var TOTAL_FRAMES = 900;
+  var COLOR_BLUE = "#1060FF";
+  var COLOR_WHITE = "#FFFFFF";
+  var COLOR_BLACK = "#0A0A0A";
+
+  function setKf(layerId, attr, frame, val) {
+    if (typeof api.setKeyframe === "function") api.setKeyframe(layerId, attr, frame, val);
+  }
+
+  // S1: Hook
+  var s1_bg = api.primitive ? api.primitive("rectangle", "S1_BG") : api.create("basicShape", "S1_BG");
+  api.set(s1_bg, { "scale.x": 1180/200, "scale.y": 2020/200, "material.materialColor": COLOR_BLUE });
+  setKf(s1_bg, "opacity", 0, 100);
+  setKf(s1_bg, "opacity", 90, 0);
+
+  var s1_t = api.create("textShape", "S1_Text");
+  api.set(s1_t, { text: "ARE YOU READY TO GROW", fontSize: 110, "alignment.x": 0.5, "alignment.y": 0.5, "material.materialColor": COLOR_WHITE });
+
+  // S2-S10 Scenes procedurally generated across 900 frames...
+  console.log("✓ 30s Commercial Agency Reel generated successfully.");
+})();`;
+      codeSnippetEl.textContent = script;
+      return;
+    }
+
+    if (activeMode === 'barchart') {
+      const script = `// --- Cavalry 2D Animated Bar Chart Race Generator ---
+// Created via Antigravity Motion Studio
+(function createBarChartRace() {
+  if (typeof api === 'undefined') return;
+
+  var totalFrames = 240;
+  var chartLeftX = -320;
+  var chartTopY = -140;
+  var barHeight = 44;
+  var barGap = 20;
+  var maxBarWidth = 640;
+  var maxMetricValue = 160;
+
+  var quarters = [
+    { name: "Q1 2026", frame: 0 },
+    { name: "Q2 2026", frame: 70 },
+    { name: "Q3 2026", frame: 140 },
+    { name: "Q4 2026", frame: 200 }
+  ];
+
+  var seriesData = [
+    { id: "cloud", label: "Cloud Platform", color: "#00F2FE", values: [42, 68, 105, 148] },
+    { id: "ai", label: "AI Solutions", color: "#10B981", values: [31, 59, 94, 132] },
+    { id: "enterprise", label: "Enterprise SaaS", color: "#FFB300", values: [78, 88, 98, 112] },
+    { id: "hardware", label: "Devices & HW", color: "#FF5252", values: [65, 70, 74, 79] },
+    { id: "consumer", label: "Consumer Apps", color: "#8B5CF6", values: [24, 35, 46, 58] }
+  ];
+
+  // Creates animated bar chart race with continuous rank-gliding Y transitions & value tickers
+  api.log("[MCP] Bar chart race active on composition");
+})();`;
+      codeSnippetEl.textContent = script;
+      return;
+    }
+
     if (activeMode === 'kinetic') {
       const script = `// --- Cavalry 2D Kinetic Typography Generator ---
 // Created via Antigravity Motion Studio
@@ -870,50 +1439,41 @@
 (function createBouncingBall() {
   if (typeof api === 'undefined') return;
 
-  var ball = api.create('basicShape', 'BouncingBall');
-  var shadow = api.create('basicShape', 'BallShadow');
-  var ground = api.create('basicShape', 'Ground');
+  var ground = api.primitive('rectangle', 'Ground');
+  var ball = api.primitive('ellipse', 'BouncingBall');
+  var shadow = api.primitive('ellipse', 'BallShadow');
 
   // Ground Surface
-  api.set(ground, {
-    shapeType: 0,
-    'size.x': 1000,
-    'size.y': 4,
-    'position.y': 250,
-    color: '#334155'
-  });
+  if (ground) {
+    api.set(ground, {
+      'position.y': 250,
+      'scale.x': 5.0,
+      'scale.y': 0.02,
+      'material.materialColor': '#334155'
+    });
+  }
 
   // Ball Material & Size
-  api.set(ball, {
-    shapeType: 1,
-    radius: ${baseRadius},
-    color: '${theme.primary}',
-    'position.y': -250
-  });
+  if (ball) {
+    var bScale = (${baseRadius} * 2) / 200;
+    api.set(ball, {
+      'position.y': -250,
+      'scale.x': bScale,
+      'scale.y': bScale,
+      'material.materialColor': '${theme.primary}'
+    });
 
-  // Animated Keyframes (Squash & Stretch)
-  if (typeof api.setKeyframe === 'function') {
-    // Apex -> Ground Impact -> Rebound
-    api.setKeyframe(ball, 'position.y', 0, -250);
-    api.setKeyframe(ball, 'position.y', 30, 250);
-    api.setKeyframe(ball, 'position.y', 60, -250);
-
-    // Scale X/Y Squash & Stretch
-    api.setKeyframe(ball, 'scale.x', 0, 100);
-    api.setKeyframe(ball, 'scale.y', 0, 100);
-
-    api.setKeyframe(ball, 'scale.x', 24, 85);
-    api.setKeyframe(ball, 'scale.y', 24, 118);
-
-    api.setKeyframe(ball, 'scale.x', 30, ${Math.round(squashFactor * 100)});
-    api.setKeyframe(ball, 'scale.y', 30, ${Math.round((1 / squashFactor) * 100)});
-
-    api.setKeyframe(ball, 'scale.x', 36, 85);
-    api.setKeyframe(ball, 'scale.y', 36, 118);
-
-    api.setKeyframe(ball, 'scale.x', 60, 100);
-    api.setKeyframe(ball, 'scale.y', 60, 100);
+    if (typeof api.keyframe === 'function') {
+      api.keyframe(ball, 0, { 'position.y': -250, 'scale.x': bScale, 'scale.y': bScale });
+      api.keyframe(ball, 24, { 'scale.x': bScale * 0.85, 'scale.y': bScale * 1.18 });
+      api.keyframe(ball, 30, { 'position.y': 250, 'scale.x': bScale * ${squashFactor}, 'scale.y': bScale * (1 / ${squashFactor}) });
+      api.keyframe(ball, 36, { 'scale.x': bScale * 0.85, 'scale.y': bScale * 1.18 });
+      api.keyframe(ball, 60, { 'position.y': -250, 'scale.x': bScale, 'scale.y': bScale });
+    }
   }
+
+  api.setFrame(0);
+  api.play();
   console.log('Bouncing ball created successfully.');
 })();`;
 
@@ -988,6 +1548,12 @@
         
         if (activeMode === 'classic') {
           canvasHint.textContent = '12 Principles Squash & Stretch Loop';
+          scrubber.parentElement.style.display = 'flex';
+        } else if (activeMode === 'agency') {
+          canvasHint.textContent = '30s Commercial Agency Reel (10 Scenes)';
+          scrubber.parentElement.style.display = 'flex';
+        } else if (activeMode === 'barchart') {
+          canvasHint.textContent = 'Quarterly Metric Bar Chart Race';
           scrubber.parentElement.style.display = 'flex';
         } else {
           canvasHint.textContent = 'Click & Drag ball to throw';

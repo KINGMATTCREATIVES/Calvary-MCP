@@ -15,7 +15,7 @@ export const nodeTools = [
                 },
                 attributes: {
                     type: "object",
-                    description: "Optional initial attributes to set immediately after creation (e.g., {'radius': 50, 'shapeType': 1, 'position.x': 200}).",
+                    description: "Optional initial attributes to set immediately after creation (e.g., {'position.x': 200, 'scale.x': 1.5, 'material.materialColor': '#FF3366'}).",
                 },
             },
             required: ["type", "name"],

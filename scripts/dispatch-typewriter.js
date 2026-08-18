@@ -1,131 +1,132 @@
 import axios from "axios";
 
 const typewriterScript = `
-(function createTypewriterInCavalry() {
-  api.log("[MCP] Generating typewriter animation for 'MATTHEW' on active composition...");
+(function createTypewriterAnimation() {
+  if (typeof api === "undefined") {
+    console.error("This script must be executed inside Cavalry.");
+    return;
+  }
+
+  console.log("[MCP] Creating Typewriter Animation for 'MATTHEW' on active composition...");
 
   var fullText = "MATTHEW";
   var fontSize = 110;
-  var textColor = "#00F2FE";       // Vibrant Electric Cyan
+  var textColor = "#00F2FE";       // Electric Cyan
   var cursorColor = "#FFFFFF";     // Crisp White Cursor
-  var framesPerChar = 6;           // 6 frames per character (~0.1s at 60fps)
+  var framesPerChar = 6;           // Cadence: 6 frames per letter (~0.1s at 60fps)
   var totalTypingFrames = fullText.length * framesPerChar; // 42 frames
-  var holdFrames = 36;             // Blink hold after typing finishes
+  var holdFrames = 36;             // Cursor blink duration after typing
   var totalFrames = totalTypingFrames + holdFrames;        // 78 frames
 
-  // 1. Create Text Shape Layer
+  var avgCharWidth = fontSize * 0.62;
+  var totalWidth = fullText.length * avgCharWidth;
+  var textStartX = -(totalWidth / 2);
+
+  // 1. Create Text Shape Node
   var textNode = api.create("textShape", "Typewriter_MATTHEW");
   if (!textNode) {
-    api.log("[MCP] Error: Failed to create textShape layer.");
+    console.error("[MCP] Failed to create textShape layer.");
     return;
   }
 
   api.set(textNode, {
     "text": "",
-    "textString": "",
     "fontSize": fontSize,
-    "position.x": 0,
+    "position.x": textStartX,
     "position.y": 0,
-    "alignment.x": 0.5,
-    "alignment.y": 0.5,
-    "align.x": 0.5,
-    "align.y": 0.5,
-    "color": textColor,
-    "fillColor": textColor
+    "horizontalAlignment": 0,
+    "autoWidth": true,
+    "material.materialColor": textColor
   });
 
-  // 2. Create Blinking Cursor Rectangle
-  var cursorNode = api.create("basicShape", "Typewriter_Cursor");
+  // 2. Create Blinking Cursor Primitive (Rectangle)
+  var cursorNode = api.primitive("rectangle", "Typewriter_Cursor");
   if (cursorNode) {
     api.set(cursorNode, {
-      "shapeType": 0, // Rectangle
-      "size.x": 6,
-      "size.y": fontSize * 0.88,
-      "position.x": 0,
+      "scale.x": 0.03, // ~6px wide
+      "scale.y": 0.50, // ~100px tall
+      "position.x": textStartX + 4,
       "position.y": 0,
-      "color": cursorColor,
-      "fillColor": cursorColor
+      "material.materialColor": cursorColor
     });
   }
 
-  // 3. Approximate Tracking Offset for Centered Text
-  var avgCharWidth = fontSize * 0.62;
-  var totalWidth = fullText.length * avgCharWidth;
-  var textStartX = -(totalWidth / 2);
-
-  // 4. Animate Progressive Keystrokes & Tactile Hammer Pops
-  if (typeof api.setKeyframe === "function") {
+  // 3. Animate Keyframes
+  if (typeof api.keyframe === "function") {
     // Initial State at Frame 0
-    api.setKeyframe(textNode, "text", 0, "");
-    api.setKeyframe(textNode, "scale.x", 0, 100);
-    api.setKeyframe(textNode, "scale.y", 0, 100);
+    api.keyframe(textNode, 0, { "text": "", "scale.x": 1.0, "scale.y": 1.0 });
 
     for (var i = 1; i <= fullText.length; i++) {
       var currentSubstr = fullText.substring(0, i);
       var keyFrame = (i - 1) * framesPerChar;
 
-      // Update text string
-      api.setKeyframe(textNode, "text", keyFrame, currentSubstr);
+      // Keyframe progressive text string & keystroke punch
+      api.keyframe(textNode, keyFrame, {
+        "text": currentSubstr,
+        "scale.x": 1.07,
+        "scale.y": 1.07
+      });
 
-      // Keystroke micro-punch
-      api.setKeyframe(textNode, "scale.x", keyFrame, 107);
-      api.setKeyframe(textNode, "scale.y", keyFrame, 107);
-
-      var settleFrame = keyFrame + 3;
-      api.setKeyframe(textNode, "scale.x", settleFrame, 100);
-      api.setKeyframe(textNode, "scale.y", settleFrame, 100);
+      var settleFrame = keyFrame + Math.min(3, framesPerChar - 1);
+      api.keyframe(textNode, settleFrame, {
+        "scale.x": 1.0,
+        "scale.y": 1.0
+      });
 
       // Cursor position tracking along typed characters
       if (cursorNode) {
         var cursorX = textStartX + (i * avgCharWidth) + 8;
-        api.setKeyframe(cursorNode, "position.x", keyFrame, Math.round(cursorX));
-        api.setKeyframe(cursorNode, "position.y", keyFrame, 0);
+        api.keyframe(cursorNode, keyFrame, {
+          "position.x": Math.round(cursorX),
+          "position.y": 0
+        });
       }
     }
 
-    // Keep final string steady through end of composition
-    api.setKeyframe(textNode, "text", totalTypingFrames, fullText);
-    api.setKeyframe(textNode, "text", totalFrames, fullText);
-    api.setKeyframe(textNode, "scale.x", totalFrames, 100);
-    api.setKeyframe(textNode, "scale.y", totalFrames, 100);
+    // Ensure final text string stays through end frame
+    api.keyframe(textNode, totalTypingFrames, { "text": fullText, "scale.x": 1.0, "scale.y": 1.0 });
+    api.keyframe(textNode, totalFrames, { "text": fullText, "scale.x": 1.0, "scale.y": 1.0 });
 
-    // 5. Cursor Blinking Cycle (Every 6 frames)
+    // 4. Cursor Blinking Animation (On/Off every 6 frames)
     if (cursorNode) {
       var blinkInterval = 6;
       for (var f = 0; f <= totalFrames; f += blinkInterval) {
         var isVisible = (Math.floor(f / blinkInterval) % 2 === 0);
         var opacityVal = isVisible ? 100 : 0;
-        api.setKeyframe(cursorNode, "opacity", f, opacityVal);
-        api.setKeyframe(cursorNode, "opacity", Math.min(totalFrames, f + blinkInterval - 1), opacityVal);
+        api.keyframe(cursorNode, f, { "opacity": opacityVal });
+        api.keyframe(cursorNode, Math.min(totalFrames, f + blinkInterval - 1), { "opacity": opacityVal });
       }
       var finalCursorX = textStartX + (fullText.length * avgCharWidth) + 8;
-      api.setKeyframe(cursorNode, "position.x", totalTypingFrames, Math.round(finalCursorX));
-      api.setKeyframe(cursorNode, "position.x", totalFrames, Math.round(finalCursorX));
+      api.keyframe(cursorNode, totalTypingFrames, { "position.x": Math.round(finalCursorX) });
+      api.keyframe(cursorNode, totalFrames, { "position.x": Math.round(finalCursorX) });
     }
   }
 
   // Rewind playhead to frame 0
-  if (typeof api.setFrame === "function") {
-    api.setFrame(0);
-  }
+  api.setFrame(0);
+  api.play();
 
-  api.log("[MCP] ✓ Typewriter animation for 'MATTHEW' successfully created on active composition!");
+  console.log("[MCP] ✓ Typewriter animation for 'MATTHEW' created successfully (Frames 0 to " + totalFrames + ")!");
+  return "Typewriter created successfully!";
 })();
 `;
 
-async function run() {
+async function main() {
+  console.log("Dispatching typewriter animation for 'MATTHEW' to Cavalry at http://localhost:8080/post...");
   try {
-    const res = await axios.post("http://localhost:8080/post", { code: typewriterScript }, { timeout: 5000 });
-    console.log("Cavalry Response:", res.data);
-    console.log("✓ Typewriter animation for 'MATTHEW' successfully created in Cavalry.");
+    const res = await axios.post("http://localhost:8080/post", {
+      type: "script",
+      code: typewriterScript
+    }, {
+      timeout: 10000,
+      headers: { "Content-Type": "application/json" }
+    });
+
+    console.log("[✓] Success! Cavalry response:", res.data);
+    console.log("✓ 'MATTHEW' typewriter animation created and playing in Cavalry.");
   } catch (err) {
-    try {
-      const res2 = await axios.post("http://127.0.0.1:8080/post", { code: typewriterScript }, { timeout: 5000 });
-      console.log("Cavalry Response (127.0.0.1):", res2.data);
-    } catch (err2) {
-      console.error("Error communicating with Cavalry bridge:", err.message);
-    }
+    console.error("[✗] Error communicating with Cavalry:", err.message);
   }
 }
 
-run();
+main();

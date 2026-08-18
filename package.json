@@ -19,7 +19,8 @@
     "demo-ball": "node scripts/dispatch-bouncing-ball.js",
     "demo-flying-ball": "node scripts/dispatch-flying-ball.js",
     "demo-typewriter": "node scripts/dispatch-typewriter-text.js",
-    "demo-start-poster": "node scripts/dispatch-start-kinetic-poster.js"
+    "demo-start-poster": "node scripts/dispatch-start-kinetic-poster.js",
+    "demo-agency-reel": "node scripts/dispatch-agency-reel.js"
   },
   "keywords": [
     "mcp",

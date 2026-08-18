@@ -1,40 +1,38 @@
 /**
- * Cavalry 2D Motion Graphics - Flying Comet / Energy Ball Generator
+ * Cavalry 2D Motion Graphics - Flying Comet Trail
  * 
- * Creates a dynamic flying ball animation with:
- * - Smooth swooping 3D/2D S-curve trajectory & bank turns
- * - Tangent velocity auto-rotation & speed-based stretch
- * - Glowing trailing ghost balls (comet tail / speed streak)
- * - Pulsing core energy glow
- * 
- * Execution: Runs directly on active composition in Cavalry via MCP Bridge.
+ * Generates a 90-frame swooping comet trail through the viewport:
+ * 1. Main Core Glowing Orb (Electric Yellow #FFE600)
+ * 2. Multi-tiered Staggered Comet Trails with decaying scale and opacity
+ * 3. Smooth Bezier sinusoidal trajectory with anticipation arc
  */
 
-(function createFlyingBallScene() {
+(function createFlyingCometBall() {
   if (typeof api === "undefined") {
     console.error("This script must be executed inside Cavalry.");
     return;
   }
 
-  console.log("[MCP] Creating Flying Ball Animation on active composition...");
+  console.log("[MCP] Creating Flying Comet Ball Animation in Cavalry...");
 
   var totalFrames = 90;
-  var ballRadius = 38;
-  var coreColor = "#FF6B00";     // Radiant Neon Orange
-  var glowColor = "#FFAA00";     // Amber Gold
-  var trailColors = ["#FF3366", "#FF0077", "#9900FF", "#6600CC"];
+  var ballRadius = 45;
+  var coreColor = "#FFE600";
+  var trailColors = ["#FF5E00", "#FF0055", "#B800FF", "#00F2FE"];
 
-  // 1. Create Trailing Ghost Balls (Comet Trail Effect)
+  // 1. Create Trail Particles (Small Ellipses)
+  var trailCount = 6;
   var trailNodes = [];
-  var trailCount = 5;
+
   for (var t = trailCount; t >= 1; t--) {
-    var trailId = api.create("basicShape", "TrailBall_" + t);
+    var trailId = api.primitive("ellipse", "TrailBall_" + t);
     if (trailId) {
       var trailRatio = t / trailCount;
+      var trailScale = ((ballRadius * (1 - trailRatio * 0.55)) * 2) / 200;
       api.set(trailId, {
-        "shapeType": 1, // Circle
-        "radius": ballRadius * (1 - trailRatio * 0.55),
-        "color": trailColors[t % trailColors.length],
+        "scale.x": trailScale,
+        "scale.y": trailScale,
+        "material.materialColor": trailColors[t % trailColors.length],
         "opacity": Math.round((1 - trailRatio * 0.7) * 60),
         "position.x": -800,
         "position.y": 0
@@ -43,96 +41,78 @@
     }
   }
 
-  // 2. Create Outer Energy Glow Ring
-  var glowRing = api.create("basicShape", "FlyingBall_Glow");
+  // 2. Create Outer Glow Primitive
+  var glowRing = api.primitive("ellipse", "FlyingBall_Glow");
   if (glowRing) {
+    var glowScale = (ballRadius * 1.35 * 2) / 200;
     api.set(glowRing, {
-      "shapeType": 1,
-      "radius": ballRadius * 1.35,
-      "color": glowColor,
+      "scale.x": glowScale,
+      "scale.y": glowScale,
+      "material.materialColor": "#FFAA00",
       "opacity": 40
     });
   }
 
-  // 3. Create Main Flying Ball
-  var mainBall = api.create("basicShape", "FlyingBall_Core");
+  // 3. Create Main Flying Ball Primitive
+  var mainBall = api.primitive("ellipse", "FlyingBall_Core");
   if (!mainBall) {
     console.error("[MCP] Failed to create main ball layer.");
     return;
   }
 
+  var mainScale = (ballRadius * 2) / 200;
   api.set(mainBall, {
-    "shapeType": 1,
-    "radius": ballRadius,
-    "color": coreColor,
+    "scale.x": mainScale,
+    "scale.y": mainScale,
+    "material.materialColor": coreColor,
     "position.x": -700,
     "position.y": 100
   });
 
-  // 4. Trajectory Function: Smooth swooping wave & loop through space
-  // Evaluates position (X, Y) at any frame
+  // 4. Trajectory Function
   function getPathPoint(frame) {
-    var progress = frame / totalFrames; // 0 to 1
-    // X travels smoothly from -750 to +750
-    var x = -750 + (progress * 1500);
-    // Y performs a majestic double-swoop with banking apex
-    var y = Math.sin(progress * Math.PI * 2.5) * 220 + Math.cos(progress * Math.PI * 4) * 80;
-    return { x: x, y: y };
+    var progress = frame / totalFrames;
+    var x = -700 + (1400 * progress);
+    var y = Math.sin(progress * Math.PI * 2.5) * 220 + Math.cos(progress * Math.PI * 1.5) * 80;
+    return { x: Math.round(x), y: Math.round(y) };
   }
 
-  // 5. Keyframe Animation across 90 frames
-  if (typeof api.setKeyframe === "function") {
+  // 5. Generate Keyframes
+  if (typeof api.keyframe === "function") {
     for (var f = 0; f <= totalFrames; f++) {
       var pt = getPathPoint(f);
-      var nextPt = getPathPoint(Math.min(totalFrames, f + 1));
-      var prevPt = getPathPoint(Math.max(0, f - 1));
+      var squishX = 1.0 + Math.abs(Math.sin(f * 0.1)) * 0.25;
+      var squishY = 1.0 / squishX;
 
-      // Calculate instantaneous velocity vector and angle
-      var dx = nextPt.x - prevPt.x;
-      var dy = nextPt.y - prevPt.y;
-      var speed = Math.sqrt(dx * dx + dy * dy);
-      var angleDeg = (Math.atan2(dy, dx) * 180) / Math.PI;
+      api.keyframe(mainBall, f, {
+        "position.x": pt.x,
+        "position.y": pt.y,
+        "scale.x": Math.round(mainScale * squishX * 1000) / 1000,
+        "scale.y": Math.round(mainScale * squishY * 1000) / 1000
+      });
 
-      // Dynamic stretch along velocity vector
-      var stretchFactor = 100 + Math.min(speed * 3.2, 75);
-      var squishCross = 10000 / stretchFactor; // Preserve volume
-
-      // Animate Main Ball
-      api.setKeyframe(mainBall, "position.x", f, Math.round(pt.x * 10) / 10);
-      api.setKeyframe(mainBall, "position.y", f, Math.round(pt.y * 10) / 10);
-      api.setKeyframe(mainBall, "rotation", f, Math.round(angleDeg * 10) / 10);
-      api.setKeyframe(mainBall, "scale.x", f, Math.round(stretchFactor * 10) / 10);
-      api.setKeyframe(mainBall, "scale.y", f, Math.round(squishCross * 10) / 10);
-
-      // Animate Glow Ring
       if (glowRing) {
-        api.setKeyframe(glowRing, "position.x", f, Math.round(pt.x * 10) / 10);
-        api.setKeyframe(glowRing, "position.y", f, Math.round(pt.y * 10) / 10);
-        api.setKeyframe(glowRing, "rotation", f, Math.round(angleDeg * 10) / 10);
-        api.setKeyframe(glowRing, "scale.x", f, Math.round(stretchFactor * 1.15 * 10) / 10);
-        api.setKeyframe(glowRing, "scale.y", f, Math.round(squishCross * 1.15 * 10) / 10);
+        api.keyframe(glowRing, f, {
+          "position.x": pt.x,
+          "position.y": pt.y
+        });
       }
 
-      // Animate Trailing Ghost Particles (Staggered Delay Path)
       for (var k = 0; k < trailNodes.length; k++) {
-        var tItem = trailNodes[k];
-        var delayedFrame = Math.max(0, f - tItem.delay);
+        var delayedFrame = Math.max(0, f - trailNodes[k].delay);
         var trailPt = getPathPoint(delayedFrame);
-        var tNext = getPathPoint(Math.min(totalFrames, delayedFrame + 1));
-        var tPrev = getPathPoint(Math.max(0, delayedFrame - 1));
-        var tAngle = (Math.atan2(tNext.y - tPrev.y, tNext.x - tPrev.x) * 180) / Math.PI;
-
-        api.setKeyframe(tItem.id, "position.x", f, Math.round(trailPt.x * 10) / 10);
-        api.setKeyframe(tItem.id, "position.y", f, Math.round(trailPt.y * 10) / 10);
-        api.setKeyframe(tItem.id, "rotation", f, Math.round(tAngle * 10) / 10);
+        api.keyframe(trailNodes[k].id, f, {
+          "position.x": trailPt.x,
+          "position.y": trailPt.y
+        });
       }
     }
   }
 
-  // Rewind playhead to frame 0
-  if (typeof api.setFrame === "function") {
-    api.setFrame(0);
-  }
+  // Rewind and play
+  api.setFrame(0);
+  api.play();
 
-  console.log("[MCP] ✓ Flying ball animation created on active composition (90 frames)!");
+  console.log("[MCP] ✓ Flying Comet Ball created successfully!");
+  return "Flying Comet Ball created successfully!";
 })();
