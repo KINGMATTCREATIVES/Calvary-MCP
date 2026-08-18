@@ -4,13 +4,12 @@
 (function() {
     console.log("Generating Procedural Noise Grid in Cavalry...");
 
-    // 1. Create Base Shape (Rounded Rectangle via api.primitive)
-    var rectId = api.primitive("rectangle", "Matrix_Node");
+    // 1. Create Base Shape (Super Ellipse for smooth rounded square)
+    var rectId = api.primitive("superEllipse", "Matrix_Node");
     if (rectId) {
         api.set(rectId, {
             "scale.x": 0.2, // 40px (default 200px * 0.2)
             "scale.y": 0.2,
-            "cornerRadius": 12,
             "material.materialColor": "#00E5FF" // Neon Cyan
         });
     }

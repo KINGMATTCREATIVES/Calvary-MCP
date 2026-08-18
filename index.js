@@ -1324,7 +1324,7 @@
 // Full 10-scene procedural animation (900 frames @ 30fps / 1080x1920 9:16)
 (function createAgencyReel30s() {
   if (typeof api === "undefined") return;
-  api.log("[MCP] Building 30s Commercial Agency Reel in Cavalry...");
+  console.log("[MCP] Building 30s Commercial Agency Reel in Cavalry...");
 
   var TOTAL_FRAMES = 900;
   var COLOR_BLUE = "#1060FF";
@@ -1381,7 +1381,7 @@
   ];
 
   // Creates animated bar chart race with continuous rank-gliding Y transitions & value tickers
-  api.log("[MCP] Bar chart race active on composition");
+  console.log("[MCP] Bar chart race active on composition");
 })();`;
       codeSnippetEl.textContent = script;
       return;

@@ -15,7 +15,7 @@
     return;
   }
 
-  api.log("[MCP] Building Animated Bar Chart Race on active composition...");
+  console.log("[MCP] Building Animated Bar Chart Race on active composition...");
 
   // --- Configuration ---
   var totalFrames = 240; // 4 seconds @ 60fps
@@ -282,5 +282,5 @@
     api.setFrame(0);
   }
 
-  api.log("[MCP] ✓ Bar Chart Race for Quarterly Metrics successfully generated (Frames 0 to " + totalFrames + ")!");
+  console.log("[MCP] ✓ Bar Chart Race for Quarterly Metrics successfully generated (Frames 0 to " + totalFrames + ")!");
 })();

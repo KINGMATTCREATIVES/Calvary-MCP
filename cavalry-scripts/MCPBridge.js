@@ -1,9 +1,18 @@
-﻿/**
+/**
  * Cavalry Motion App - Model Context Protocol (MCP) Bridge
  * Uses direct instance callback and while(server.postCount())
  */
 
 (function() {
+    // Polyfill api.log to prevent TypeError if scripts call api.log
+    if (typeof api !== "undefined" && !api.log) {
+        api.log = function() {
+            if (typeof console !== "undefined" && typeof console.log === "function") {
+                console.log.apply(console, arguments);
+            }
+        };
+    }
+
     var SCRIPT_ID = "com.scenegroup.mcpbridge";
     var PORT = 8080;
 
@@ -32,12 +41,12 @@
                             api.exec(SCRIPT_ID, path);
                         }
                     } else if (code) {
-                        if (typeof api.exec === "function") {
-                            api.exec(SCRIPT_ID, code);
-                        } else {
+                        try {
                             eval(code);
+                            console.log("[MCP Bridge] Executed animation command successfully.");
+                        } catch (evalErr) {
+                            console.error("[MCP Bridge] Script eval error: " + evalErr);
                         }
-                        console.log("[MCP Bridge] Executed animation command successfully.");
                     }
                 }
             } catch (err) {

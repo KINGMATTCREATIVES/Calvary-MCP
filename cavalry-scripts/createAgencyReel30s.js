@@ -23,7 +23,7 @@
     return;
   }
 
-  api.log("[MCP] Recreating 30s Commercial Agency Reel on active composition...");
+  console.log("[MCP] Recreating 30s Commercial Agency Reel on active composition...");
 
   try {
     // --- Composition Settings ---
@@ -79,8 +79,7 @@
           "position.y": y !== undefined ? y : 0,
           "scale.x": scaleX,
           "scale.y": scaleY,
-          "material.materialColor": colorHex || COLOR_WHITE,
-          "cornerRadius": cornerRadius || 0
+          "material.materialColor": colorHex || COLOR_WHITE
         });
       }
       return node;
@@ -176,7 +175,7 @@
     // SCENE 1: THE HOOK (Frames 0 - 90 / 0s - 3s)
     // Blue Background + Sunburst Fans + Stars + "ARE YOU READY TO GROW"
     // =========================================================================
-    api.log("[Scene 1] Building Hook...");
+    console.log("[Scene 1] Building Hook...");
     var s1_bg = createRectLayer("S1_BG", COMP_WIDTH + 100, COMP_HEIGHT + 100, 0, 0, COLOR_BLUE);
     animateVisibility(s1_bg, 0, 90, 1);
 
@@ -217,7 +216,7 @@
     // SCENE 2: THE CHALLENGE (Frames 90 - 180 / 3s - 6s)
     // Circular Iris Transition -> Obsidian Black + "YOUR PRESENCE IN SOCIAL MEDIA?"
     // =========================================================================
-    api.log("[Scene 2] Building The Challenge...");
+    console.log("[Scene 2] Building The Challenge...");
     var s2_iris = createCircleLayer("S2_Iris_BG", 2800, 0, 0, COLOR_BLACK);
     if (s2_iris) {
       var maxScale = 2800 / 200;
@@ -265,7 +264,7 @@
     // SCENE 3: THE SOLUTION / BOXED PILL (Frames 180 - 270 / 6s - 9s)
     // Blue Background + "WE ARE THE" + Solid Boxed Pill "EXPERTS!"
     // =========================================================================
-    api.log("[Scene 3] Building Solution & Boxed Pill...");
+    console.log("[Scene 3] Building Solution & Boxed Pill...");
     var s3_iris = createCircleLayer("S3_Iris_BG", 2800, 0, 0, COLOR_BLUE);
     if (s3_iris) {
       var maxScale = 2800 / 200;
@@ -311,7 +310,7 @@
     // SCENE 4: CORE OFFERING (Frames 270 - 360 / 9s - 12s)
     // Obsidian Black + Two-Tone "Social Media Marketing" + Giant Watermark
     // =========================================================================
-    api.log("[Scene 4] Building Core Offering...");
+    console.log("[Scene 4] Building Core Offering...");
     var s4_bg = createRectLayer("S4_BG", COMP_WIDTH + 100, COMP_HEIGHT + 100, 0, 0, COLOR_BLACK);
     animateVisibility(s4_bg, 270, 360, 1);
 
@@ -345,7 +344,7 @@
     // SCENE 5: CASE STUDY INTRO (Frames 360 - 450 / 12s - 14s)
     // Cobalt Blue + Fast Impact "CASE STUDY" -> "3 MONTHS"
     // =========================================================================
-    api.log("[Scene 5] Building Case Study Intro...");
+    console.log("[Scene 5] Building Case Study Intro...");
     var s5_bg = createRectLayer("S5_BG", COMP_WIDTH + 100, COMP_HEIGHT + 100, 0, 0, COLOR_BLUE);
     animateVisibility(s5_bg, 360, 450, 1);
 
@@ -377,7 +376,7 @@
     // SCENE 6: CLIENT BRAND REVEAL (Frames 450 - 540 / 14s - 17s)
     // Pure White Backdrop + "SABI - JUICE YOUR MIND"
     // =========================================================================
-    api.log("[Scene 6] Building Client Identity Reveal...");
+    console.log("[Scene 6] Building Client Identity Reveal...");
     var s6_bg = createRectLayer("S6_BG", COMP_WIDTH + 100, COMP_HEIGHT + 100, 0, 0, COLOR_WHITE);
     animateVisibility(s6_bg, 450, 540, 1);
 
@@ -398,7 +397,7 @@
     // SCENE 7: SMARTPHONE FEED TRANSFORMATION (Frames 540 - 660 / 17s - 21s)
     // Device Mockup ("BEFORE" -> "WITH Mktideas agency")
     // =========================================================================
-    api.log("[Scene 7] Building Smartphone Feed Transformation...");
+    console.log("[Scene 7] Building Smartphone Feed Transformation...");
     var s7_bg_gray = createRectLayer("S7_BG_Gray", COMP_WIDTH + 100, COMP_HEIGHT + 100, 0, 0, COLOR_GRAY_BG);
     animateVisibility(s7_bg_gray, 540, 600, 1);
 
@@ -457,7 +456,7 @@
     // SCENE 8: DATA GROWTH BAR CHART & TICKER (Frames 660 - 810 / 21s - 26s)
     // 5-Column Growth Bars + Upward Trend Curve + Live Counter 852 -> 50,967
     // =========================================================================
-    api.log("[Scene 8] Building Data Growth Bar Chart & Ticker...");
+    console.log("[Scene 8] Building Data Growth Bar Chart & Ticker...");
     var s8_bg = createRectLayer("S8_BG", COMP_WIDTH + 100, COMP_HEIGHT + 100, 0, 0, COLOR_WHITE);
     animateVisibility(s8_bg, 660, 810, 1);
 
@@ -525,7 +524,7 @@
     // SCENE 9: EMOTIONAL CALL TO VALUE (Frames 810 - 870 / 27s - 29s)
     // Obsidian Black + "LET'S CREATE SOMETHING AMAZING TOGETHER"
     // =========================================================================
-    api.log("[Scene 9] Building Emotional Call to Value...");
+    console.log("[Scene 9] Building Emotional Call to Value...");
     var s9_bg = createRectLayer("S9_BG", COMP_WIDTH + 100, COMP_HEIGHT + 100, 0, 0, COLOR_BLACK);
     animateVisibility(s9_bg, 810, 870, 1);
 
@@ -559,7 +558,7 @@
     // SCENE 10: AGENCY OUTRO & CTA (Frames 870 - 900 / 29s - 30s)
     // Cobalt Blue + "Mktideas agency" Branding + Platform Suite
     // =========================================================================
-    api.log("[Scene 10] Building Agency Outro & CTA...");
+    console.log("[Scene 10] Building Agency Outro & CTA...");
     var s10_iris = createCircleLayer("S10_Iris_BG", 2800, 0, 0, COLOR_BLUE);
     if (s10_iris) {
       var maxScale = 2800 / 200;
@@ -590,7 +589,7 @@
       api.setFrame(0);
     }
 
-    api.log("[✓] Successfully built complete 30s Commercial Agency Reel on active composition in Cavalry!");
+    console.log("[✓] Successfully built complete 30s Commercial Agency Reel on active composition in Cavalry!");
     console.log("✓ 30-Second Commercial Agency Reel recreated on active composition (10 scenes & 900 frames).");
 
     return {
