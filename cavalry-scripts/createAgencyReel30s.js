@@ -1,20 +1,20 @@
 /**
  * Cavalry 2D Motion Graphics - 30-Second Commercial Agency Reel & Case Study
  * 
- * Recreates the complete 9:16 vertical motion graphics case study:
- * 1. Scene 1 (0-3s / F0-90): Cobalt Blue Hook + Sunbursts + Stars + "ARE YOU READY TO GROW"
- * 2. Scene 2 (3-6s / F90-180): Circular Iris Transition + Obsidian Black + "YOUR PRESENCE IN SOCIAL MEDIA?"
- * 3. Scene 3 (6-9s / F180-270): Cobalt Blue + "WE ARE THE" + Boxed Pill "EXPERTS!"
- * 4. Scene 4 (9-12s / F270-360): Obsidian Black + Two-Tone "Social Media Marketing" + Outline Watermark
- * 5. Scene 5 (12-14s / F360-450): Cobalt Blue + Rapid Impact "CASE STUDY" -> "3 MONTHS"
- * 6. Scene 6 (14-17s / F450-540): Pure White Backdrop + "SABI - JUICE YOUR MIND" Client Reveal
- * 7. Scene 7 (17-21s / F540-660): Smartphone Device Mockup ("BEFORE" -> "WITH Mktideas agency")
- * 8. Scene 8 (21-26s / F660-810): Data Growth Bar Chart + Dynamic Trend Arrow + 852 -> 50,967 View Ticker
- * 9. Scene 9 (26-28s / F780-870): Obsidian Black Luxury Card + "LET'S CREATE SOMETHING AMAZING TOGETHER"
- * 10. Scene 10 (28-30s / F870-900): Cobalt Blue Outro + "Mktideas agency" Branding + Platform Suite
+ * Recreates the complete 9:16 vertical motion graphics case study on the current composition:
+ * - Scene 1 (0-3s / F0-90): Cobalt Blue Hook + Sunbursts + Stars + "ARE YOU READY TO GROW"
+ * - Scene 2 (3-6s / F90-180): Circular Iris Transition + Obsidian Black + "YOUR PRESENCE IN SOCIAL MEDIA?"
+ * - Scene 3 (6-9s / F180-270): Cobalt Blue + "WE ARE THE" + Boxed Pill "EXPERTS!"
+ * - Scene 4 (9-12s / F270-360): Obsidian Black + Two-Tone "Social Media Marketing" + Outline Watermark
+ * - Scene 5 (12-14s / F360-450): Cobalt Blue + Rapid Impact "CASE STUDY" -> "3 MONTHS"
+ * - Scene 6 (14-17s / F450-540): Pure White Backdrop + "SABI - JUICE YOUR MIND" Client Reveal
+ * - Scene 7 (17-21s / F540-660): Smartphone Device Mockup ("BEFORE" -> "WITH Mktideas agency")
+ * - Scene 8 (21-26s / F660-810): Data Growth Bar Chart + Dynamic Trend Arrow + 852 -> 50,967 View Ticker
+ * - Scene 9 (26-28s / F780-870): Obsidian Black Luxury Card + "LET'S CREATE SOMETHING AMAZING TOGETHER"
+ * - Scene 10 (28-30s / F870-900): Cobalt Blue Outro + "Mktideas agency" Branding + Platform Suite
  * 
  * Execution:
- * Execute via Cavalry MCP (`cavalry_run_script`) or paste in Cavalry Scripts -> Script Editor.
+ * Runs directly on the current composition in Cavalry via MCP Bridge or Script Editor.
  */
 
 (function createAgencyReel30s() {
@@ -23,13 +23,18 @@
     return;
   }
 
-  api.log("[MCP] Building 30s Commercial Agency Reel Animation in Cavalry...");
+  api.log("[MCP] Recreating 30s Commercial Agency Reel on active composition...");
 
   try {
-    // --- Global Configuration ---
+    // --- Composition Settings ---
     var TOTAL_FRAMES = 900; // 30 seconds @ 30fps
     var COMP_WIDTH = 1080;
     var COMP_HEIGHT = 1920;
+
+    // Set time range if supported by active composition
+    if (typeof api.setTimeRange === "function") {
+      api.setTimeRange(0, TOTAL_FRAMES);
+    }
 
     // Color Palette Tokens
     var COLOR_BLUE = "#1060FF";     // Cobalt Blue
@@ -45,17 +50,6 @@
       if (typeof api.setKeyframe === "function") {
         api.setKeyframe(layerId, attr, frame, val);
       }
-    }
-
-    function createColorMat(name, hex) {
-      var node = api.create("color", name);
-      if (node) {
-        api.set(node, {
-          "color": hex,
-          "color.hex": hex
-        });
-      }
-      return node;
     }
 
     function createTextLayer(name, text, fontSize, x, y, colorHex, alignX, alignY) {
@@ -153,7 +147,6 @@
       setKf(layerId, "scale.y", startFrame + duration, baseScaleY);
     }
 
-    // Helper to create a Corner Sunburst Ray Fan
     function createSunburstFan(prefix, cornerX, cornerY, rayCount, fanAngle, startFrame, endFrame, colorHex) {
       var fanGroup = [];
       var rayLength = 360;
@@ -165,13 +158,11 @@
         var angleDeg = startAngle + i * angleStep;
         var ray = createRectLayer(prefix + "_Ray_" + i, rayThickness, rayLength, cornerX, cornerY, colorHex || COLOR_WHITE, 2);
         if (ray) {
-          // Set initial rotation and keyframe subtle oscillating or rotating motion
           var rotZ = angleDeg;
           api.set(ray, {
             "rotation.z": rotZ,
-            "anchor.y": 0 // rotate from corner base
+            "anchor.y": 0
           });
-          // Subtle rotation drift over the scene duration
           setKf(ray, "rotation.z", startFrame, rotZ);
           setKf(ray, "rotation.z", endFrame, rotZ + 18);
           animateVisibility(ray, startFrame, endFrame, 6);
@@ -189,7 +180,6 @@
     var s1_bg = createRectLayer("S1_BG", COMP_WIDTH + 100, COMP_HEIGHT + 100, 0, 0, COLOR_BLUE);
     animateVisibility(s1_bg, 0, 90, 1);
 
-    // Outline watermark text in background
     var s1_watermark = createTextLayer("S1_Watermark", "STRATEGY", 260, 0, -80, COLOR_DARK_BLUE);
     if (s1_watermark) {
       api.set(s1_watermark, { "opacity": 35 });
@@ -198,11 +188,9 @@
       animateVisibility(s1_watermark, 0, 90, 8);
     }
 
-    // Top-Right & Bottom-Left Sunburst Fans
     createSunburstFan("S1_TR", 480, -820, 11, 85, 0, 90, COLOR_WHITE);
     createSunburstFan("S1_BL", -480, 820, 9, 70, 0, 90, COLOR_WHITE);
 
-    // Sparkle Star 1
     var s1_star = createStarLayer("S1_Star", 120, 360, -320, COLOR_WHITE);
     if (s1_star) {
       animateVisibility(s1_star, 10, 90, 6);
@@ -211,7 +199,6 @@
       setKf(s1_star, "rotation.z", 90, 90);
     }
 
-    // Kinetic Typography: "ARE" -> "YOU" -> "READY" -> "TO GROW"
     var s1_t1 = createTextLayer("S1_T1", "ARE", 130, 0, -280, COLOR_WHITE);
     var s1_t2 = createTextLayer("S1_T2", "YOU", 140, 0, -130, COLOR_WHITE);
     var s1_t3 = createTextLayer("S1_T3", "READY", 130, 0, 20, COLOR_WHITE);
@@ -311,7 +298,6 @@
       animateSpringPopIn(tNode, fStart, 16, 1, 1);
     });
 
-    // Boxed Pill with Inverted Text
     var s3_box = createRectLayer("S3_Box", 820, 170, 0, 240, COLOR_WHITE, 12);
     var s3_box_text = createTextLayer("S3_Box_Text", "EXPERTS!", 120, 0, 240, COLOR_BLUE);
     if (s3_box && s3_box_text) {
@@ -395,7 +381,6 @@
     var s6_bg = createRectLayer("S6_BG", COMP_WIDTH + 100, COMP_HEIGHT + 100, 0, 0, COLOR_WHITE);
     animateVisibility(s6_bg, 450, 540, 1);
 
-    // Organic Emblem Seal
     var s6_emblem_outer = createCircleLayer("S6_Emblem_Outer", 220, -220, 0, "#27272A");
     var s6_emblem_inner = createCircleLayer("S6_Emblem_Inner", 180, -220, 0, COLOR_WHITE);
     var s6_emblem_leaf = createCircleLayer("S6_Emblem_Leaf", 100, -220, 0, "#27272A");
@@ -414,14 +399,12 @@
     // Device Mockup ("BEFORE" -> "WITH Mktideas agency")
     // =========================================================================
     api.log("[Scene 7] Building Smartphone Feed Transformation...");
-    // Background transitions from light gray to blue
     var s7_bg_gray = createRectLayer("S7_BG_Gray", COMP_WIDTH + 100, COMP_HEIGHT + 100, 0, 0, COLOR_GRAY_BG);
     animateVisibility(s7_bg_gray, 540, 600, 1);
 
     var s7_bg_blue = createRectLayer("S7_BG_Blue", COMP_WIDTH + 100, COMP_HEIGHT + 100, 0, 0, COLOR_BLUE);
     animateVisibility(s7_bg_blue, 600, 660, 1);
 
-    // Section Titles
     var s7_title_before = createTextLayer("S7_Title_Before", "BEFORE", 100, 0, -680, COLOR_BLACK);
     animateVisibility(s7_title_before, 542, 600, 4);
 
@@ -434,7 +417,6 @@
     createSunburstFan("S7_BL", -480, 820, 8, 70, 540, 660, "#3F3F46");
     createSunburstFan("S7_Btm_Rays", 0, 960, 12, 90, 600, 660, COLOR_WHITE);
 
-    // Phone Hardware Body
     var s7_phone_body = createRectLayer("S7_Phone_Body", 560, 1020, 0, 80, "#18181B", 56);
     var s7_phone_screen = createRectLayer("S7_Phone_Screen", 530, 990, 0, 80, COLOR_WHITE, 44);
     var s7_phone_notch = createRectLayer("S7_Phone_Notch", 140, 28, 0, -390, "#18181B", 14);
@@ -446,7 +428,6 @@
       setKf(node, "position.y", 560, 80);
     });
 
-    // 3x3 Social Post Feed Grid Inside Phone
     var postColorsBefore = ["#A1A1AA", "#D4D4D8", "#71717A", "#E4E4E7", "#9CA3AF", "#D1D5DB", "#E5E7EB", "#9CA3AF", "#D1D5DB"];
     var postColorsAfter = ["#1060FF", "#00F2FE", "#10B981", "#FFB300", "#FF5252", "#8B5CF6", "#EC4899", "#3B82F6", "#06B6D4"];
 
@@ -463,10 +444,8 @@
         var postNode = createRectLayer("S7_Post_" + idx, postSize, postSize, pX, pY, postColorsBefore[idx], 10);
         if (postNode) {
           animateVisibility(postNode, 545, 660, 4);
-          // Color shift from desaturated to vibrant at frame 600
           setKf(postNode, "material.materialColor", 595, postColorsBefore[idx]);
           setKf(postNode, "material.materialColor", 605, postColorsAfter[idx]);
-          // Little pop jump at transition
           setKf(postNode, "scale.x", 600, (postSize / 200) * 0.85);
           setKf(postNode, "scale.x", 608, (postSize / 200) * 1.05);
           setKf(postNode, "scale.x", 615, postSize / 200);
@@ -485,20 +464,17 @@
     var s8_title_views = createTextLayer("S8_Title_Views", "VIEWS", 110, -280, -680, COLOR_BLACK, 0, 0.5);
     animateVisibility(s8_title_views, 662, 810, 4);
 
-    // Initial baseline label
     var s8_lbl_julio = createTextLayer("S8_Lbl_Julio", "JULIO", 52, -360, 720, COLOR_BLACK);
     var s8_lbl_sept = createTextLayer("S8_Lbl_Sept", "SEPTIEMBRE", 52, 280, 720, COLOR_BLACK);
     animateVisibility(s8_lbl_julio, 662, 810, 4);
     animateVisibility(s8_lbl_sept, 700, 810, 4);
 
-    // 5 Progressive Growth Bars
     var barHeights = [220, 440, 680, 960, 1260];
     var barStartX = -360;
     var barStepX = 160;
     var barWidth = 115;
-    var barBaseY = 660; // Bottom contact baseline
+    var barBaseY = 660;
 
-    var barNodes = [];
     for (var b = 0; b < 5; b++) {
       var bX = barStartX + b * barStepX;
       var targetH = barHeights[b];
@@ -508,19 +484,13 @@
         var fBarStart = 668 + b * 12;
         var fBarEnd = fBarStart + 22;
 
-        // Set anchor to bottom so scaling extends upward
-        api.set(bNode, { "anchor.y": 0.5 });
-        
-        // Scale and position interpolation
         setKf(bNode, "position.y", fBarStart, barBaseY);
         setKf(bNode, "position.y", fBarEnd, barBaseY - (targetH / 2));
         setKf(bNode, "scale.y", fBarStart, 0.05);
         setKf(bNode, "scale.y", fBarEnd, targetH / 200);
-        barNodes.push(bNode);
       }
     }
 
-    // Dynamic Upward Growth Arrow
     var s8_arrow = createStarLayer("S8_Growth_Arrow", 140, 240, -180, COLOR_BLUE);
     if (s8_arrow) {
       animateVisibility(s8_arrow, 715, 810, 4);
@@ -532,7 +502,6 @@
       setKf(s8_arrow, "rotation.z", 750, 25);
     }
 
-    // Animated Ticker Number Counter
     var s8_counter_initial = createTextLayer("S8_Counter_Initial", "852", 120, -360, -420, COLOR_BLACK, 0.5, 0.5);
     animateVisibility(s8_counter_initial, 665, 710, 4);
 
@@ -621,8 +590,8 @@
       api.setFrame(0);
     }
 
-    api.log("[✓] Successfully built complete 30s Commercial Agency Reel in Cavalry!");
-    console.log("✓ 30-Second Commercial Agency Reel created with 10 scenes & 900 frames.");
+    api.log("[✓] Successfully built complete 30s Commercial Agency Reel on active composition in Cavalry!");
+    console.log("✓ 30-Second Commercial Agency Reel recreated on active composition (10 scenes & 900 frames).");
 
     return {
       success: true,
