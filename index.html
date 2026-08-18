@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bouncing Ball Animation Studio & Cavalry Bridge</title>
+  <meta name="description" content="Interactive 2D bouncing ball animation studio with squash and stretch, physics engine, real-time audio synthesis, and procedural Cavalry motion export.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header Navigation -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="brand-badge">
+          <span class="pulse-icon"></span>
+          <span class="brand-title">Motion Studio</span>
+        </div>
+        <span class="brand-divider">/</span>
+        <h1 class="header-title">Bouncing Ball Animation</h1>
+      </div>
+
+      <div class="header-actions">
+        <div class="status-indicator" id="cavalry-status" title="Cavalry MCP Bridge Connection">
+          <span class="status-dot"></span>
+          <span class="status-text">Bridge: Checking...</span>
+        </div>
+        <button class="btn btn-secondary" id="btn-sound-toggle" title="Toggle Synthesized Audio">
+          <svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.08"></path>
+          </svg>
+          <span id="sound-btn-text">Audio: On</span>
+        </button>
+        <button class="btn btn-primary" id="btn-run-cavalry" title="Execute current animation in Cavalry via MCP Bridge">
+          <svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          <span>Send to Cavalry</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="workspace">
+      <!-- Left: Interactive Canvas & Playback -->
+      <section class="viewport-card">
+        <div class="viewport-toolbar">
+          <div class="mode-tabs" role="tablist">
+            <button class="tab-btn active" data-mode="kinetic" id="tab-kinetic">Kinetic Text</button>
+            <button class="tab-btn" data-mode="classic" id="tab-classic">12 Principles (Squash & Stretch)</button>
+            <button class="tab-btn" data-mode="physics" id="tab-physics">Newtonian Physics</button>
+            <button class="tab-btn" data-mode="trajectory" id="tab-trajectory">Arc Bounce</button>
+            <button class="tab-btn" data-mode="multiball" id="tab-multiball">Multi-Ball Sandbox</button>
+          </div>
+
+          <div class="viewport-quick-tools">
+            <label class="toggle-control" title="Show Motion Path & Trails">
+              <input type="checkbox" id="chk-trails" checked>
+              <span class="toggle-label">Trails</span>
+            </label>
+            <label class="toggle-control" title="Show Velocity Vectors & Contact Grid">
+              <input type="checkbox" id="chk-vectors">
+              <span class="toggle-label">Vectors</span>
+            </label>
+            <label class="toggle-control" title="Show Shockwave & Dust Particles">
+              <input type="checkbox" id="chk-particles" checked>
+              <span class="toggle-label">Particles</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div class="canvas-wrapper" id="canvas-container">
+          <canvas id="anim-canvas"></canvas>
+          <div class="canvas-overlay-hint" id="canvas-hint">Click & Drag ball to throw</div>
+          <div class="canvas-metrics" id="canvas-metrics">
+            <span>FPS: <b id="val-fps">60</b></span>
+            <span>Height: <b id="val-height">0 px</b></span>
+            <span>Velocity: <b id="val-velocity">0 px/s</b></span>
+          </div>
+        </div>
+
+        <!-- Timeline & Playback Bar -->
+        <div class="timeline-bar">
+          <div class="transport-controls">
+            <button class="icon-btn" id="btn-rewind" title="Rewind to Frame 0">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="11 19 2 12 11 5 11 19"></polygon>
+                <polygon points="22 19 13 12 22 5 22 19"></polygon>
+              </svg>
+            </button>
+            <button class="icon-btn" id="btn-step-back" title="Step Back 1 Frame">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="6" y1="5" x2="6" y2="19"></line>
+                <polygon points="18 5 10 12 18 19 18 5"></polygon>
+              </svg>
+            </button>
+            <button class="icon-btn primary-icon-btn" id="btn-play-pause" title="Play / Pause">
+              <svg id="icon-play" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <polygon points="6 4 20 12 6 20 6 4"></polygon>
+              </svg>
+              <svg id="icon-pause" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="display:none;">
+                <rect x="6" y="4" width="4" height="16"></rect>
+                <rect x="14" y="4" width="4" height="16"></rect>
+              </svg>
+            </button>
+            <button class="icon-btn" id="btn-step-fwd" title="Step Forward 1 Frame">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="6 5 14 12 6 19 6 5"></polygon>
+                <line x1="18" y1="5" x2="18" y2="19"></line>
+              </svg>
+            </button>
+            <button class="icon-btn" id="btn-reset-ball" title="Drop / Reset Ball">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                <path d="M21 3v5h-5"></path>
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                <path d="M8 16H3v5"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="scrubber-container">
+            <span class="scrub-label" id="lbl-frame">F: 0 / 60</span>
+            <input type="range" id="timeline-scrubber" min="0" max="60" value="0" step="1" class="timeline-slider">
+          </div>
+
+          <div class="speed-selector">
+            <span class="speed-label">Speed:</span>
+            <select id="sel-speed" class="select-dropdown">
+              <option value="0.25">0.25x</option>
+              <option value="0.5">0.5x</option>
+              <option value="1" selected>1.0x</option>
+              <option value="1.5">1.5x</option>
+              <option value="2">2.0x</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Inspector Controls & Code Export -->
+      <aside class="sidebar-card">
+        <div class="sidebar-section">
+          <h2 class="section-title">Animation Dynamics</h2>
+          
+          <div class="control-group">
+            <div class="control-header">
+              <label for="sl-gravity">Gravity (Acceleration)</label>
+              <span class="control-val" id="val-gravity">980 px/s²</span>
+            </div>
+            <input type="range" id="sl-gravity" min="200" max="2500" value="980" step="20">
+          </div>
+
+          <div class="control-group">
+            <div class="control-header">
+              <label for="sl-bounce">Restitution (Bounciness)</label>
+              <span class="control-val" id="val-bounce">82%</span>
+            </div>
+            <input type="range" id="sl-bounce" min="0.1" max="0.98" value="0.82" step="0.01">
+          </div>
+
+          <div class="control-group">
+            <div class="control-header">
+              <label for="sl-squash">Squash & Stretch Factor</label>
+              <span class="control-val" id="val-squash">1.35x</span>
+            </div>
+            <input type="range" id="sl-squash" min="0" max="2.5" value="1.35" step="0.05">
+          </div>
+
+          <div class="control-group">
+            <div class="control-header">
+              <label for="sl-radius">Ball Radius</label>
+              <span class="control-val" id="val-radius">42 px</span>
+            </div>
+            <input type="range" id="sl-radius" min="15" max="80" value="42" step="1">
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <h2 class="section-title">Visual Styling & Material</h2>
+          
+          <div class="theme-grid">
+            <button class="theme-chip active" data-theme="coral" style="--chip-color: #ff5252;">Coral Burst</button>
+            <button class="theme-chip" data-theme="neon" style="--chip-color: #00f2fe;">Cyan Glow</button>
+            <button class="theme-chip" data-theme="amber" style="--chip-color: #ffb300;">Radiant Gold</button>
+            <button class="theme-chip" data-theme="basketball" style="--chip-color: #f76707;">Basketball</button>
+            <button class="theme-chip" data-theme="tennis" style="--chip-color: #ccff00;">Tennis Ball</button>
+            <button class="theme-chip" data-theme="glass" style="--chip-color: #8be9fd;">Glass Orb</button>
+          </div>
+        </div>
+
+        <div class="sidebar-section code-section">
+          <div class="code-header">
+            <h2 class="section-title">Cavalry Node Script</h2>
+            <button class="btn-copy" id="btn-copy-code" title="Copy Cavalry Script to Clipboard">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span id="copy-status-text">Copy Script</span>
+            </button>
+          </div>
+          <div class="code-container">
+            <pre><code id="cavalry-code-snippet">// Live Cavalry procedural script</code></pre>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <script src="index.js"></script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+{
+  "name": "cavalry-mcp-server",
+  "version": "1.0.0",
+  "description": "Model Context Protocol (MCP) Bridge for Cavalry 2D Motion Design Application",
+  "main": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "cavalry-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "install-bridge": "node scripts/install-bridge.js",
+    "test-connection": "node scripts/test-connection.js",
+    "demo-grid": "node scripts/create-demo.js 1",
+    "demo-text": "node scripts/create-demo.js 2",
+    "demo-mandala": "node scripts/create-demo.js 3",
+    "demo-ball": "node scripts/dispatch-bouncing-ball.js",
+    "demo-flying-ball": "node scripts/dispatch-flying-ball.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "cavalry",
+    "motion-graphics",
+    "animation",
+    "ai",
+    "llm",
+    "automation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.1",
+    "axios": "^1.7.9",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@scenery/cavalry-types": "^1.0.0",
+    "@types/node": "^22.13.4",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}
