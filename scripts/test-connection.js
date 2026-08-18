@@ -42,7 +42,8 @@ async function testConnection() {
 
   if (!connected) {
     console.error("\n[✗] Connection failed on all attempted addresses.");
-    console.error("Please open Cavalry and run: Scripts -> MCPBridge (or Scripts -> Stallion).");
+    console.error("Please open Cavalry and run: Scripts -> MCPBridge.");
+    process.exit(1);
   }
 }
 

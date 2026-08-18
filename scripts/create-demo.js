@@ -1,6 +1,6 @@
+import axios from "axios";
 import fs from "fs";
 import path from "path";
-import axios from "axios";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -9,54 +9,37 @@ const __dirname = path.dirname(__filename);
 const demoArg = process.argv[2] || "1";
 let demoFile = "01_procedural_grid_pulse.js";
 
-if (demoArg === "2" || demoArg.toLowerCase().includes("text")) {
+if (demoArg === "2") {
   demoFile = "02_kinetic_typography.js";
-} else if (demoArg === "3" || demoArg.toLowerCase().includes("mandala")) {
+} else if (demoArg === "3") {
   demoFile = "03_geometric_mandala.js";
 }
 
-const filePath = path.join(__dirname, "..", "examples", demoFile);
-const code = fs.readFileSync(filePath, "utf8");
+const scriptPath = path.resolve(__dirname, "../examples", demoFile);
 
-const hostsToTry = [
-  process.env.CAVALRY_BRIDGE_HOST,
-  "localhost",
-  "127.0.0.1",
-  "[::1]"
-].filter(Boolean);
+if (!fs.existsSync(scriptPath)) {
+  console.error(`[-] Demo script not found: ${scriptPath}`);
+  process.exit(1);
+}
 
-const port = process.env.CAVALRY_BRIDGE_PORT || "8080";
+const code = fs.readFileSync(scriptPath, "utf-8");
 
-async function runDemo() {
+async function main() {
   console.log(`Preparing to send demo [${demoFile}] to Cavalry...`);
-  let success = false;
+  try {
+    const res = await axios.post("http://localhost:8080/post", {
+      type: "script",
+      code: code
+    }, {
+      timeout: 10000,
+      headers: { "Content-Type": "application/json" }
+    });
 
-  for (const host of hostsToTry) {
-    const url = `http://${host}:${port}/post`;
-    try {
-      const response = await axios.post(url, {
-        type: "script",
-        code: code,
-      }, {
-        timeout: 10000,
-        headers: { "Content-Type": "application/json" }
-      });
-
-      console.log(`[✓] Success! Cavalry executed [${demoFile}] via ${host}:${port}.`);
-      console.log("Result:", response.data);
-      success = true;
-      break;
-    } catch (error) {
-      if (error.code !== "ECONNREFUSED") {
-        console.warn(`[!] Attempt on ${host}:${port} responded with error:`, error.message);
-      }
-    }
-  }
-
-  if (!success) {
-    console.error("[✗] Could not connect to Cavalry on any host.");
-    console.error("Make sure Cavalry is open, then click: Scripts -> MCPBridge (or Scripts -> Stallion).");
+    console.log(`[✓] Success! Cavalry executed [${demoFile}] via localhost:8080.`);
+    console.log("Result:", res.data);
+  } catch (err) {
+    console.error(`[-] Failed to dispatch demo to Cavalry:`, err.message);
   }
 }
 
-runDemo();
+main();
